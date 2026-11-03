@@ -151,12 +151,6 @@ export default function TestimonialListPage() {
         >
           <ArrowLeft className="w-4 h-4" /> Kembali ke Beranda
         </Link>
-        <Link
-          href="/testimonial/add"
-          className="bg-rose-500 text-white text-xs font-bold px-5 py-2.5 rounded-full hover:bg-rose-600 transition shadow-sm flex items-center gap-1.5"
-        >
-          <Sparkles className="w-3.5 h-3.5" /> Tulis Testimonial
-        </Link>
       </div>
 
       {/* KONTROL LEBAR UTAMA: Menggunakan max-w-7xl agar 6 kolom proporsional */}

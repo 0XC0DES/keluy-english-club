@@ -571,7 +571,6 @@ export default function Home() {
     selectedDayMaxSessions > 0 &&
     selectedDateEvents.length >= selectedDayMaxSessions;
   const isSelectedDateHoliday = selectedDayMaxSessions === 0;
-  const isSelectedSunday = selectedDate?.getDay() === 0;
 
   const selectedDateStr = selectedDate
     ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, "0")}-${String(selectedDate.getDate()).padStart(2, "0")}`
@@ -1301,7 +1300,7 @@ export default function Home() {
                                 </span>
                               </div>
                               <h5 className="font-bold text-slate-800 text-sm mt-1">
-                                {evt.summary}
+                                Terisi
                               </h5>
                             </div>
                           );
@@ -1486,7 +1485,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* TESTIMONIAL (Maksimal 3 Ditampilkan, Card Sama Persis, Aman Teks Panjang) */}
+        {/* TESTIMONIAL */}
         <section
           id="testimonial"
           className="scroll-mt-32 max-w-6xl mx-auto my-16"
