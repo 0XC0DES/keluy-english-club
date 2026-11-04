@@ -1871,25 +1871,66 @@ export default function Home() {
               onSubmit={handleCalendarRequestWhatsApp}
               className="space-y-4"
             >
+              {/* CUSTOM CARD SELECTOR (Ganti Dropdown Bawaan) */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                  <BookOpen className="w-4 h-4 text-rose-400" /> Pilih Kelas /
-                  Layanan
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <BookOpen className="w-4 h-4 text-rose-400" /> Pilih Program /
+                  Kelas
                 </label>
-                <select
-                  value={reqServiceId}
-                  onChange={(e) => setReqServiceId(e.target.value)}
-                  required
-                  className="w-full bg-slate-50 border border-rose-200 text-slate-800 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-rose-400 transition-all cursor-pointer font-medium"
-                >
-                  {allServices.map((srv) => (
-                    <option key={srv.id} value={srv.id}>
-                      [{srv.category.toUpperCase()}] {srv.name} ({srv.price})
-                    </option>
-                  ))}
-                </select>
+
+                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                  {allServices.map((srv) => {
+                    const isSelected = reqServiceId === srv.id;
+                    const isOffline = srv.category === "offline";
+
+                    return (
+                      <div
+                        key={srv.id}
+                        onClick={() => setReqServiceId(srv.id)}
+                        className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                          isSelected
+                            ? "bg-rose-50 border-rose-400 ring-2 ring-rose-100 shadow-xs"
+                            : "bg-slate-50/50 border-slate-200 hover:border-rose-200 hover:bg-white"
+                        }`}
+                      >
+                        <div className="flex-1 pr-2">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                                isOffline
+                                  ? "bg-amber-100 text-amber-700"
+                                  : "bg-sky-100 text-sky-700"
+                              }`}
+                            >
+                              {srv.category}
+                            </span>
+                            <span className="text-xs font-bold text-rose-600">
+                              {srv.price}
+                            </span>
+                          </div>
+                          <h4 className="font-bold text-slate-800 text-sm leading-tight">
+                            {srv.name}
+                          </h4>
+                        </div>
+
+                        <div
+                          className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected
+                              ? "bg-rose-500 border-rose-500 text-white"
+                              : "border-slate-300 bg-white"
+                          }`}
+                        >
+                          {isSelected && (
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
+              {/* INPUT JAM */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-rose-400" /> Pilih Jam Mulai
@@ -1908,7 +1949,7 @@ export default function Home() {
                   type="button"
                   disabled={isReqChecking}
                   onClick={() => setIsRequestSlotModalOpen(false)}
-                  className="w-1/3 bg-white border border-slate-200 text-slate-600 font-bold text-sm py-3 rounded-xl hover:bg-slate-50 transition"
+                  className="w-1/3 bg-white border border-slate-200 text-slate-600 font-bold text-sm py-3 rounded-xl hover:gs-slate-50 transition"
                 >
                   Batal
                 </button>
