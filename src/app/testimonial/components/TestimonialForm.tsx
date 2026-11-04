@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import {
   Sparkles,
   Send,
@@ -11,6 +11,7 @@ import {
   Search,
   Check,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import { Playfair_Display, Signika } from "next/font/google";
 
@@ -42,34 +43,6 @@ interface GiphyItem {
   };
 }
 
-interface TestimonialFormProps {
-  name: string;
-  setName: (val: string) => void;
-  content: string;
-  setContent: React.Dispatch<React.SetStateAction<string>>;
-  selectedColor: string;
-  setSelectedColor: (val: string) => void;
-  rating: number;
-  setRating: (val: number) => void;
-  isSubmitting: boolean;
-  handleSubmit: (e: React.FormEvent) => void;
-  successMessage: string;
-  setSuccessMessage: (val: string) => void;
-  activePickerTab: "emoji" | "sticker" | "gif" | null;
-  setActivePickerTab: (tab: "emoji" | "sticker" | "gif" | null) => void;
-  customGifUrl: string;
-  setCustomGifUrl: (val: string) => void;
-  giphyQuery: string;
-  setGiphyQuery: (val: string) => void;
-  giphyResults: GiphyItem[];
-  isGiphyLoading: boolean;
-  addEmoji: (emoji: string) => void;
-  addMediaUrl: (url: string) => void;
-  COLOR_OPTIONS: ColorOption[];
-  EMOJI_LIST: string[];
-  setRatingStars: any; // kalau ada
-}
-
 export default function TestimonialForm({
   name,
   setName,
@@ -94,8 +67,42 @@ export default function TestimonialForm({
   addEmoji,
   addMediaUrl,
   COLOR_OPTIONS,
-  EMOJI_LIST,
+  E_MOJI_LIST, // SESUAI PROPS
 }: any) {
+  const [errorWarning, setErrorWarning] = useState("");
+
+  // Handler kustom untuk mengecek cooldown localStorage sebelum submit
+  const handleFormSubmitWithCooldown = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorWarning("");
+
+    // 1. Durasi cooldown (Contoh: 5 menit = 5 * 60 * 1000 ms)
+    const COOLDOWN_TIME = 5 * 60 * 1000;
+    const lastSubmitTime = localStorage.getItem("last_testimonial_time");
+    const now = Date.now();
+
+    if (lastSubmitTime && now - Number(lastSubmitTime) < COOLDOWN_TIME) {
+      const remainingMs = COOLDOWN_TIME - (now - Number(lastSubmitTime));
+      const remainingMinutes = Math.ceil(remainingMs / 60000);
+      setErrorWarning(
+        `Mohon tunggu sekitar ${remainingMinutes} menit lagi sebelum mengirim testimonial berikutnya ya! 🙏`,
+      );
+      return;
+    }
+
+    // 2. Validasi minimal karakter (minimal 15 karakter agar tidak asal/spam)
+    if (content.trim().length < 15) {
+      setErrorWarning(
+        "Testimonial terlalu pendek. Tuliskan minimal 15 karakter ya!",
+      );
+      return;
+    }
+
+    // Jika lolos, set waktu sekarang ke localStorage lalu teruskan ke handler asli
+    localStorage.setItem("last_testimonial_time", String(now));
+    handleSubmit(e);
+  };
+
   return (
     <div
       className={`${signika.className} bg-white border border-rose-100 rounded-[2.5rem] p-6 md:p-10 shadow-lg relative`}
@@ -119,7 +126,21 @@ export default function TestimonialForm({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Peringatan Cooldown / Validasi */}
+      {errorWarning && (
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 text-xs md:text-sm p-4 rounded-2xl flex items-start gap-2.5 animate-in fade-in">
+          <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+          <div className="flex-1 font-medium">{errorWarning}</div>
+          <button
+            onClick={() => setErrorWarning("")}
+            className="text-red-400 hover:text-red-600"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      <form onSubmit={handleFormSubmitWithCooldown} className="space-y-6">
         {/* Input Nama */}
         <div>
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
@@ -218,9 +239,9 @@ export default function TestimonialForm({
           </div>
 
           {/* Tab 1: Emoji Picker */}
-          {activePickerTab === "emoji" && (
+          {activePickerTab === "emoji" && E_MOJI_LIST && (
             <div className="mb-3 p-3 bg-rose-50/80 border border-rose-200 rounded-2xl flex flex-wrap gap-2 animate-in fade-in zoom-in-95">
-              {EMOJI_LIST.map((emoji: string, idx: number) => (
+              {E_MOJI_LIST.map((emoji: string, idx: number) => (
                 <button
                   key={idx}
                   type="button"
@@ -240,7 +261,9 @@ export default function TestimonialForm({
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <input
                   type="text"
-                  placeholder={`Cari ${activePickerTab === "sticker" ? "Sticker" : "GIF"} di Giphy...`}
+                  placeholder={`Cari ${
+                    activePickerTab === "sticker" ? "Sticker" : "GIF"
+                  } di Giphy...`}
                   value={giphyQuery}
                   onChange={(e) => setGiphyQuery(e.target.value)}
                   className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-rose-400"
@@ -305,9 +328,12 @@ export default function TestimonialForm({
           <textarea
             required
             rows={4}
-            placeholder="Tuliskan pengalaman belajarmu, suasana kelas, atau masukan untuk Miss Ken di sini..."
+            placeholder="Tuliskan pengalaman belajarmu, suasana kelas, atau masukan untuk Miss Ken di sini (minimal 15 karakter)..."
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              setContent(e.target.value);
+              if (errorWarning) setErrorWarning("");
+            }}
             className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 transition"
           ></textarea>
         </div>
