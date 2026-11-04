@@ -179,6 +179,7 @@ export default function Home() {
   const [inputTime, setInputTime] = useState("");
   const [isChecking, setIsChecking] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [readyWaUrl, setReadyWaUrl] = useState<string | null>(null);
 
   // State untuk Modal Request Slot Kalender
   const [allServices, setAllServices] = useState<ServiceItem[]>([]);
@@ -187,6 +188,9 @@ export default function Home() {
   const [reqTime, setReqTime] = useState("");
   const [reqErrorMessage, setReqErrorMessage] = useState("");
   const [isReqChecking, setIsReqChecking] = useState(false);
+  const [readyCalendarWaUrl, setReadyCalendarWaUrl] = useState<string | null>(
+    null,
+  );
 
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
   const [isLoadingTestimonials, setIsLoadingTestimonials] =
@@ -322,7 +326,6 @@ export default function Home() {
     fetchServices();
   }, [activeTab]);
 
-  // Ambil semua layanan untuk modal request slot kalender
   useEffect(() => {
     const fetchAllServices = async () => {
       try {
@@ -431,6 +434,7 @@ export default function Home() {
     setInputDate("");
     setInputTime("");
     setErrorMessage("");
+    setReadyWaUrl(null);
   };
 
   const handleProceedToWhatsApp = async (
@@ -440,9 +444,9 @@ export default function Home() {
     e.preventDefault();
     setErrorMessage("");
     setIsChecking(true);
+    setReadyWaUrl(null);
 
     try {
-      // Parsing tanggal & jam lokal dengan benar (menghindari UTC trap)
       const [year, month, day] = inputDate.split("-").map(Number);
       const [hours, minutes] = inputTime.split(":").map(Number);
       const reqStart = new Date(year, month - 1, day, hours, minutes, 0);
@@ -518,7 +522,6 @@ export default function Home() {
 
       const reqEnd = new Date(reqStart.getTime() + durationMins * 60000);
 
-      // Pengecekan bentrok dengan jeda istirahat 1 jam (60 menit) setelah kelas selesai
       const hasConflict = scheduleList.some(
         (event: { start: string; end: string }) => {
           const eventStart = new Date(event.start);
@@ -548,11 +551,8 @@ export default function Home() {
 
       const text = `Halo Miss Ken! 👋 Aku sudah cek website Keluy English Club.\nAku tertarik untuk daftar kelas ${modeKelas} ${srv.name} untuk jadwal hari ${formattedDate}, jam ${inputTime} WIB.\nApakah slotnya masih tersedia, Miss?`;
 
-      window.open(
-        `https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`,
-        "_blank",
-      );
-      setBookingCardId(null);
+      const waUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`;
+      setReadyWaUrl(waUrl);
     } catch {
       setErrorMessage(
         "Terjadi kesalahan sistem, silakan coba beberapa saat lagi.",
@@ -562,7 +562,6 @@ export default function Home() {
     }
   };
 
-  // Handler Request Slot dari Kalender dengan pilihan kelas
   const handleCalendarRequestWhatsApp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDate || !reqServiceId || !reqTime) {
@@ -573,6 +572,7 @@ export default function Home() {
     }
     setReqErrorMessage("");
     setIsReqChecking(true);
+    setReadyCalendarWaUrl(null);
 
     try {
       const year = selectedDate.getFullYear();
@@ -650,7 +650,7 @@ export default function Home() {
         (event: { start: string; end: string }) => {
           const eventStart = new Date(event.start);
           const eventEnd = new Date(event.end);
-          const bufferedEventEnd = new Date(eventEnd.getTime() + 60 * 60000); // Jeda 1 jam istirahat
+          const bufferedEventEnd = new Date(eventEnd.getTime() + 60 * 60000);
           return reqStart < bufferedEventEnd && reqEnd > eventStart;
         },
       );
@@ -675,11 +675,8 @@ export default function Home() {
 
       const text = `Halo Miss Ken! 👋 Aku sudah cek jadwal di kalender website Keluy English Club.\nAku ingin request slot untuk kelas ${modeKelas} *${srvName}* pada hari ${formattedDate}, jam ${reqTime} WIB.\nApakah slotnya tersedia, Miss?`;
 
-      window.open(
-        `https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`,
-        "_blank",
-      );
-      setIsRequestSlotModalOpen(false);
+      const waUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`;
+      setReadyCalendarWaUrl(waUrl);
     } catch {
       setReqErrorMessage(
         "Terjadi kesalahan sistem, silakan coba beberapa saat lagi.",
@@ -1191,62 +1188,82 @@ export default function Home() {
                           </div>
                         )}
 
-                        <div className="mb-3">
-                          <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                            <CalendarIcon className="w-3.5 h-3.5 text-rose-400" />{" "}
-                            Tanggal
-                          </label>
-                          <input
-                            type="date"
-                            required
-                            value={inputDate}
-                            onChange={(e) => {
-                              setInputDate(e.target.value);
-                              setErrorMessage("");
-                            }}
-                            className="w-full bg-white border border-rose-200 text-slate-800 text-sm rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-400 transition-all cursor-pointer"
-                          />
-                        </div>
+                        {readyWaUrl ? (
+                          <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-center space-y-2.5">
+                            <div className="flex items-center justify-center gap-1 text-emerald-700 font-bold text-xs">
+                              <CheckCircle2 className="w-4 h-4" /> Jadwal
+                              Tersedia!
+                            </div>
+                            <a
+                              href={readyWaUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full bg-[#25D366] text-white font-bold text-xs py-2.5 rounded-xl shadow-md hover:bg-[#1DA851] transition flex items-center justify-center gap-1.5"
+                              onClick={() => setBookingCardId(null)}
+                            >
+                              <MessageCircle className="w-4 h-4" /> Kirim Pesan
+                              ke WA
+                            </a>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="mb-3">
+                              <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                                <CalendarIcon className="w-3.5 h-3.5 text-rose-400" />{" "}
+                                Tanggal
+                              </label>
+                              <input
+                                type="date"
+                                required
+                                value={inputDate}
+                                onChange={(e) => {
+                                  setInputDate(e.target.value);
+                                  setErrorMessage("");
+                                }}
+                                className="w-full bg-white border border-rose-200 text-slate-800 text-sm rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-400 transition-all cursor-pointer"
+                              />
+                            </div>
 
-                        <div className="mb-4">
-                          <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-rose-400" /> Jam
-                          </label>
-                          <input
-                            type="time"
-                            required
-                            value={inputTime}
-                            onChange={(e) => {
-                              setInputTime(e.target.value);
-                              setErrorMessage("");
-                            }}
-                            className="w-full bg-white border border-rose-200 text-slate-800 text-sm rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-400 transition-all cursor-pointer"
-                          />
-                        </div>
+                            <div className="mb-4">
+                              <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 text-rose-400" />{" "}
+                                Jam
+                              </label>
+                              <input
+                                type="time"
+                                required
+                                value={inputTime}
+                                onChange={(e) => {
+                                  setInputTime(e.target.value);
+                                  setErrorMessage("");
+                                }}
+                                className="w-full bg-white border border-rose-200 text-slate-800 text-sm rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-400 transition-all cursor-pointer"
+                              />
+                            </div>
 
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            disabled={isChecking}
-                            onClick={() => handleOpenBooking(null)}
-                            className="w-1/3 bg-white border border-slate-200 text-slate-500 font-bold text-xs py-2.5 rounded-xl hover:bg-slate-50 transition disabled:opacity-50"
-                          >
-                            Batal
-                          </button>
-                          <button
-                            type="submit"
-                            disabled={isChecking}
-                            className="w-2/3 bg-[#25D366] text-white font-bold text-xs py-2.5 rounded-xl shadow-sm hover:bg-[#1DA851] transition flex items-center justify-center gap-1.5 disabled:opacity-70"
-                          >
-                            {isChecking ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <>
-                                <MessageCircle className="w-4 h-4" /> Ke WA
-                              </>
-                            )}
-                          </button>
-                        </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                disabled={isChecking}
+                                onClick={() => handleOpenBooking(null)}
+                                className="w-1/3 bg-white border border-slate-200 text-slate-500 font-bold text-xs py-2.5 rounded-xl hover:bg-slate-50 transition disabled:opacity-50"
+                              >
+                                Batal
+                              </button>
+                              <button
+                                type="submit"
+                                disabled={isChecking}
+                                className="w-2/3 bg-rose-500 text-white font-bold text-xs py-2.5 rounded-xl shadow-sm hover:bg-rose-600 transition flex items-center justify-center gap-1.5 disabled:opacity-70"
+                              >
+                                {isChecking ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  "Cek & Lanjut"
+                                )}
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </form>
                     ) : (
                       <button
@@ -1503,6 +1520,7 @@ export default function Home() {
                         onClick={() => {
                           setReqTime("");
                           setReqErrorMessage("");
+                          setReadyCalendarWaUrl(null);
                           if (allServices.length > 0 && !reqServiceId) {
                             setReqServiceId(allServices[0].id);
                           }
@@ -1867,107 +1885,126 @@ export default function Home() {
               </div>
             )}
 
-            <form
-              onSubmit={handleCalendarRequestWhatsApp}
-              className="space-y-4"
-            >
-              {/* CUSTOM CARD SELECTOR (Ganti Dropdown Bawaan) */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                  <BookOpen className="w-4 h-4 text-rose-400" /> Pilih Program /
-                  Kelas
-                </label>
+            {readyCalendarWaUrl ? (
+              <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl text-center space-y-3 my-4">
+                <div className="flex items-center justify-center gap-1.5 text-emerald-700 font-bold text-sm">
+                  <CheckCircle2 className="w-5 h-5" /> Slot Tersedia!
+                </div>
+                <p className="text-xs text-slate-600">
+                  Silakan klik tombol di bawah untuk melanjutkan pengiriman
+                  pesan request ke WhatsApp Miss Ken.
+                </p>
+                <a
+                  href={readyCalendarWaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-[#25D366] text-white font-bold text-sm py-3.5 rounded-xl shadow-md hover:bg-[#1DA851] transition flex items-center justify-center gap-2"
+                  onClick={() => setIsRequestSlotModalOpen(false)}
+                >
+                  <MessageCircle className="w-5 h-5" /> Kirim Pesan ke WhatsApp
+                </a>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleCalendarRequestWhatsApp}
+                className="space-y-4"
+              >
+                {/* CUSTOM CARD SELECTOR */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4 text-rose-400" /> Pilih Program
+                    / Kelas
+                  </label>
 
-                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                  {allServices.map((srv) => {
-                    const isSelected = reqServiceId === srv.id;
-                    const isOffline = srv.category === "offline";
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                    {allServices.map((srv) => {
+                      const isSelected = reqServiceId === srv.id;
+                      const isOffline = srv.category === "offline";
 
-                    return (
-                      <div
-                        key={srv.id}
-                        onClick={() => setReqServiceId(srv.id)}
-                        className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                          isSelected
-                            ? "bg-rose-50 border-rose-400 ring-2 ring-rose-100 shadow-xs"
-                            : "bg-slate-50/50 border-slate-200 hover:border-rose-200 hover:bg-white"
-                        }`}
-                      >
-                        <div className="flex-1 pr-2">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${
-                                isOffline
-                                  ? "bg-amber-100 text-amber-700"
-                                  : "bg-sky-100 text-sky-700"
-                              }`}
-                            >
-                              {srv.category}
-                            </span>
-                            <span className="text-xs font-bold text-rose-600">
-                              {srv.price}
-                            </span>
-                          </div>
-                          <h4 className="font-bold text-slate-800 text-sm leading-tight">
-                            {srv.name}
-                          </h4>
-                        </div>
-
+                      return (
                         <div
-                          className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                          key={srv.id}
+                          onClick={() => setReqServiceId(srv.id)}
+                          className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
                             isSelected
-                              ? "bg-rose-500 border-rose-500 text-white"
-                              : "border-slate-300 bg-white"
+                              ? "bg-rose-50 border-rose-400 ring-2 ring-rose-100 shadow-xs"
+                              : "bg-slate-50/50 border-slate-200 hover:border-rose-200 hover:bg-white"
                           }`}
                         >
-                          {isSelected && (
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                          )}
+                          <div className="flex-1 pr-2">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                                  isOffline
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-sky-100 text-sky-700"
+                                }`}
+                              >
+                                {srv.category}
+                              </span>
+                              <span className="text-xs font-bold text-rose-600">
+                                {srv.price}
+                              </span>
+                            </div>
+                            <h4 className="font-bold text-slate-800 text-xs sm:text-sm leading-tight">
+                              {srv.name}
+                            </h4>
+                          </div>
+
+                          <div
+                            className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                              isSelected
+                                ? "bg-rose-500 border-rose-500 text-white"
+                                : "border-slate-300 bg-white"
+                            }`}
+                          >
+                            {isSelected && (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              {/* INPUT JAM */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-rose-400" /> Pilih Jam Mulai
-                </label>
-                <input
-                  type="time"
-                  required
-                  value={reqTime}
-                  onChange={(e) => setReqTime(e.target.value)}
-                  className="w-full bg-slate-50 border border-rose-200 text-slate-800 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-rose-400 transition-all cursor-pointer font-medium"
-                />
-              </div>
+                {/* INPUT JAM */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-rose-400" /> Pilih Jam Mulai
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={reqTime}
+                    onChange={(e) => setReqTime(e.target.value)}
+                    className="w-full bg-slate-50 border border-rose-200 text-slate-800 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-rose-400 transition-all cursor-pointer font-medium"
+                  />
+                </div>
 
-              <div className="pt-2 flex gap-3">
-                <button
-                  type="button"
-                  disabled={isReqChecking}
-                  onClick={() => setIsRequestSlotModalOpen(false)}
-                  className="w-1/3 bg-white border border-slate-200 text-slate-600 font-bold text-sm py-3 rounded-xl hover:gs-slate-50 transition"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={isReqChecking}
-                  className="w-2/3 bg-rose-500 text-white font-bold text-sm py-3 rounded-xl shadow-md hover:bg-rose-600 transition flex items-center justify-center gap-2 disabled:opacity-70"
-                >
-                  {isReqChecking ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      <MessageCircle className="w-5 h-5" /> Lanjut ke WA
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+                <div className="pt-2 flex gap-3">
+                  <button
+                    type="button"
+                    disabled={isReqChecking}
+                    onClick={() => setIsRequestSlotModalOpen(false)}
+                    className="w-1/3 bg-white border border-slate-200 text-slate-600 font-bold text-sm py-3 rounded-xl hover:bg-slate-50 transition"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isReqChecking}
+                    className="w-2/3 bg-rose-500 text-white font-bold text-sm py-3 rounded-xl shadow-md hover:bg-rose-600 transition flex items-center justify-center gap-2 disabled:opacity-70"
+                  >
+                    {isReqChecking ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      "Cek Ketersediaan"
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
