@@ -180,6 +180,14 @@ export default function Home() {
   const [isChecking, setIsChecking] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // State untuk Modal Request Slot Kalender
+  const [allServices, setAllServices] = useState<ServiceItem[]>([]);
+  const [isRequestSlotModalOpen, setIsRequestSlotModalOpen] = useState(false);
+  const [reqServiceId, setReqServiceId] = useState("");
+  const [reqTime, setReqTime] = useState("");
+  const [reqErrorMessage, setReqErrorMessage] = useState("");
+  const [isReqChecking, setIsReqChecking] = useState(false);
+
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
   const [isLoadingTestimonials, setIsLoadingTestimonials] =
     useState<boolean>(true);
@@ -314,6 +322,26 @@ export default function Home() {
     fetchServices();
   }, [activeTab]);
 
+  // Ambil semua layanan untuk modal request slot kalender
+  useEffect(() => {
+    const fetchAllServices = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "services"));
+        const fetched: ServiceItem[] = [];
+        querySnapshot.forEach((docSnap) => {
+          fetched.push({ id: docSnap.id, ...docSnap.data() } as ServiceItem);
+        });
+        setAllServices(fetched);
+        if (fetched.length > 0) {
+          setReqServiceId(fetched[0].id);
+        }
+      } catch (err) {
+        console.error("Gagal mengambil semua layanan:", err);
+      }
+    };
+    fetchAllServices();
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onSnapshot(
       collection(db, "testimonials"),
@@ -414,7 +442,11 @@ export default function Home() {
     setIsChecking(true);
 
     try {
-      const reqStart = new Date(`${inputDate}T${inputTime}:00`);
+      // Parsing tanggal & jam lokal dengan benar (menghindari UTC trap)
+      const [year, month, day] = inputDate.split("-").map(Number);
+      const [hours, minutes] = inputTime.split(":").map(Number);
+      const reqStart = new Date(year, month - 1, day, hours, minutes, 0);
+
       const now = new Date();
       if (reqStart < now) {
         setErrorMessage(
@@ -426,11 +458,10 @@ export default function Home() {
 
       const maxSessions = getMaxSessionsForDate(reqStart);
       if (maxSessions === 0) {
-        const year = reqStart.getFullYear();
-        const month = String(reqStart.getMonth() + 1).padStart(2, "0");
-        const dayNum = String(reqStart.getDate()).padStart(2, "0");
         const overrideNote =
-          dateOverridesMap[`${year}-${month}-${dayNum}`]?.note;
+          dateOverridesMap[
+            `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+          ]?.note;
 
         setErrorMessage(
           overrideNote
@@ -442,8 +473,7 @@ export default function Home() {
       }
 
       if (reqStart.getDay() === 0) {
-        const hour = parseInt(inputTime.split(":")[0], 10);
-        if (hour < 12) {
+        if (hours < 12) {
           setErrorMessage(
             "Kelas untuk hari Minggu hanya tersedia mulai pukul 12.00 WIB siang.",
           );
@@ -466,9 +496,9 @@ export default function Home() {
         (event: { start: string }) => {
           const evDate = new Date(event.start);
           return (
-            evDate.getFullYear() === reqStart.getFullYear() &&
-            evDate.getMonth() === reqStart.getMonth() &&
-            evDate.getDate() === reqStart.getDate()
+            evDate.getFullYear() === year &&
+            evDate.getMonth() === month - 1 &&
+            evDate.getDate() === day
           );
         },
       );
@@ -487,17 +517,21 @@ export default function Home() {
       }
 
       const reqEnd = new Date(reqStart.getTime() + durationMins * 60000);
+
+      // Pengecekan bentrok dengan jeda istirahat 1 jam (60 menit) setelah kelas selesai
       const hasConflict = scheduleList.some(
         (event: { start: string; end: string }) => {
           const eventStart = new Date(event.start);
           const eventEnd = new Date(event.end);
-          return reqStart < eventEnd && reqEnd > eventStart;
+          const bufferedEventEnd = new Date(eventEnd.getTime() + 60 * 60000);
+
+          return reqStart < bufferedEventEnd && reqEnd > eventStart;
         },
       );
 
       if (hasConflict) {
         setErrorMessage(
-          "Waduh, jam tersebut bentrok dengan jadwal kelas lain. Cek kalender di bawah untuk lihat jam kosong ya!",
+          "Waduh, jam tersebut bentrok atau berada di jam istirahat pengajar (wajib jeda 1 jam setelah kelas selesai). Cek kalender di bawah ya!",
         );
         setIsChecking(false);
         return;
@@ -525,6 +559,133 @@ export default function Home() {
       );
     } finally {
       setIsChecking(false);
+    }
+  };
+
+  // Handler Request Slot dari Kalender dengan pilihan kelas
+  const handleCalendarRequestWhatsApp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDate || !reqServiceId || !reqTime) {
+      setReqErrorMessage(
+        "Silakan lengkapi tanggal, pilih kelas, dan jam terlebih dahulu.",
+      );
+      return;
+    }
+    setReqErrorMessage("");
+    setIsReqChecking(true);
+
+    try {
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth();
+      const day = selectedDate.getDate();
+      const [hours, minutes] = reqTime.split(":").map(Number);
+      const reqStart = new Date(year, month, day, hours, minutes, 0);
+
+      const now = new Date();
+      if (reqStart < now) {
+        setReqErrorMessage(
+          "Tidak bisa memilih jadwal di masa lalu. Silakan pilih waktu yang akan datang.",
+        );
+        setIsReqChecking(false);
+        return;
+      }
+
+      const maxSessions = getMaxSessionsForDate(reqStart);
+      if (maxSessions === 0) {
+        setReqErrorMessage(
+          "Hari tersebut adalah hari libur / tidak menerima kelas.",
+        );
+        setIsReqChecking(false);
+        return;
+      }
+
+      if (reqStart.getDay() === 0 && hours < 12) {
+        setReqErrorMessage(
+          "Kelas untuk hari Minggu hanya tersedia mulai pukul 12.00 WIB siang.",
+        );
+        setIsReqChecking(false);
+        return;
+      }
+
+      const res = await fetch("/api/get-schedule");
+      const result = await res.json();
+
+      if (!result.success) {
+        setReqErrorMessage("Gagal menyinkronkan kalender. Silakan coba lagi.");
+        setIsReqChecking(false);
+        return;
+      }
+
+      const scheduleList = result.data;
+      const selectedDayEvents = scheduleList.filter(
+        (event: { start: string }) => {
+          const evDate = new Date(event.start);
+          return (
+            evDate.getFullYear() === year &&
+            evDate.getMonth() === month &&
+            evDate.getDate() === day
+          );
+        },
+      );
+
+      if (selectedDayEvents.length >= maxSessions) {
+        setReqErrorMessage(
+          `Maaf, kuota jadwal tanggal tersebut sudah penuh (${maxSessions} sesi).`,
+        );
+        setIsReqChecking(false);
+        return;
+      }
+
+      const srv = allServices.find((s) => s.id === reqServiceId);
+      let durationMins = 60;
+      if (
+        srv &&
+        (srv.duration.includes("90") || srv.duration.includes("1.5"))
+      ) {
+        durationMins = 90;
+      }
+
+      const reqEnd = new Date(reqStart.getTime() + durationMins * 60000);
+      const hasConflict = scheduleList.some(
+        (event: { start: string; end: string }) => {
+          const eventStart = new Date(event.start);
+          const eventEnd = new Date(event.end);
+          const bufferedEventEnd = new Date(eventEnd.getTime() + 60 * 60000); // Jeda 1 jam istirahat
+          return reqStart < bufferedEventEnd && reqEnd > eventStart;
+        },
+      );
+
+      if (hasConflict) {
+        setReqErrorMessage(
+          "Waduh, jam tersebut bentrok atau berada di jam istirahat pengajar (wajib jeda 1 jam setelah kelas selesai).",
+        );
+        setIsReqChecking(false);
+        return;
+      }
+
+      const options: Intl.DateTimeFormatOptions = {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      };
+      const formattedDate = reqStart.toLocaleDateString("id-ID", options);
+      const modeKelas = srv?.category === "offline" ? "Offline" : "Online";
+      const srvName = srv ? srv.name : "Kelas Bahasa Inggris";
+
+      const text = `Halo Miss Ken! 👋 Aku sudah cek jadwal di kalender website Keluy English Club.\nAku ingin request slot untuk kelas ${modeKelas} *${srvName}* pada hari ${formattedDate}, jam ${reqTime} WIB.\nApakah slotnya tersedia, Miss?`;
+
+      window.open(
+        `https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`,
+        "_blank",
+      );
+      setIsRequestSlotModalOpen(false);
+    } catch {
+      setReqErrorMessage(
+        "Terjadi kesalahan sistem, silakan coba beberapa saat lagi.",
+      );
+    } finally {
+      setIsReqChecking(false);
     }
   };
 
@@ -1339,7 +1500,14 @@ export default function Home() {
                       </button>
                     ) : (
                       <button
-                        onClick={() => setIsWaModalOpen(true)}
+                        onClick={() => {
+                          setReqTime("");
+                          setReqErrorMessage("");
+                          if (allServices.length > 0 && !reqServiceId) {
+                            setReqServiceId(allServices[0].id);
+                          }
+                          setIsRequestSlotModalOpen(true);
+                        }}
                         className="w-full bg-rose-500 text-white font-bold py-3.5 px-6 rounded-2xl hover:bg-rose-600 transition shadow-md flex items-center justify-center gap-2 text-sm"
                       >
                         <MessageCircle className="w-4 h-4" /> Request Slot
@@ -1656,6 +1824,109 @@ export default function Home() {
             >
               Lanjutkan ke WhatsApp <ArrowRight className="w-4 h-4" />
             </a>
+          </div>
+        </div>
+      )}
+
+      {/* REQUEST SLOT KALENDER MODAL */}
+      {isRequestSlotModalOpen && selectedDate && (
+        <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 px-4 backdrop-blur-sm">
+          <div className="bg-white p-6 md:p-8 rounded-[2rem] max-w-md w-full relative shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setIsRequestSlotModalOpen(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-rose-500 transition"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-500 shadow-sm">
+                <CalendarIcon className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-rose-500 uppercase tracking-widest block">
+                  Request Slot Kalender
+                </span>
+                <h3
+                  className={`${playfair.className} text-xl font-bold text-rose-950`}
+                >
+                  {selectedDate.toLocaleDateString("id-ID", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </h3>
+              </div>
+            </div>
+
+            {reqErrorMessage && (
+              <div className="mb-4 bg-red-50 border border-red-100 text-red-600 text-xs p-3 rounded-xl flex items-start gap-2 leading-relaxed">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{reqErrorMessage}</span>
+              </div>
+            )}
+
+            <form
+              onSubmit={handleCalendarRequestWhatsApp}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                  <BookOpen className="w-4 h-4 text-rose-400" /> Pilih Kelas /
+                  Layanan
+                </label>
+                <select
+                  value={reqServiceId}
+                  onChange={(e) => setReqServiceId(e.target.value)}
+                  required
+                  className="w-full bg-slate-50 border border-rose-200 text-slate-800 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-rose-400 transition-all cursor-pointer font-medium"
+                >
+                  {allServices.map((srv) => (
+                    <option key={srv.id} value={srv.id}>
+                      [{srv.category.toUpperCase()}] {srv.name} ({srv.price})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-rose-400" /> Pilih Jam Mulai
+                </label>
+                <input
+                  type="time"
+                  required
+                  value={reqTime}
+                  onChange={(e) => setReqTime(e.target.value)}
+                  className="w-full bg-slate-50 border border-rose-200 text-slate-800 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-rose-400 transition-all cursor-pointer font-medium"
+                />
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button
+                  type="button"
+                  disabled={isReqChecking}
+                  onClick={() => setIsRequestSlotModalOpen(false)}
+                  className="w-1/3 bg-white border border-slate-200 text-slate-600 font-bold text-sm py-3 rounded-xl hover:bg-slate-50 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isReqChecking}
+                  className="w-2/3 bg-rose-500 text-white font-bold text-sm py-3 rounded-xl shadow-md hover:bg-rose-600 transition flex items-center justify-center gap-2 disabled:opacity-70"
+                >
+                  {isReqChecking ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <MessageCircle className="w-5 h-5" /> Lanjut ke WA
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
