@@ -549,7 +549,7 @@ export default function Home() {
       const formattedDate = reqStart.toLocaleDateString("id-ID", options);
       const modeKelas = activeTab === "online" ? "Online" : "Offline";
 
-      const text = `Halo Miss Ken! 👋 Aku sudah cek website Keluy English Club.\nAku tertarik untuk daftar kelas ${modeKelas} ${srv.name} untuk jadwal hari ${formattedDate}, jam ${inputTime} WIB.\nApakah slotnya masih tersedia, Miss?`;
+      const text = `Halo Miss Ken! Aku sudah cek website Keluy English Club.\nAku tertarik untuk daftar kelas ${modeKelas} ${srv.name} untuk jadwal hari ${formattedDate}, jam ${inputTime} WIB.\nApakah slotnya masih tersedia, Miss?`;
 
       const waUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`;
       setReadyWaUrl(waUrl);
