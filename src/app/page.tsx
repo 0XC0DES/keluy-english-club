@@ -188,9 +188,7 @@ export default function Home() {
   const [reqTime, setReqTime] = useState("");
   const [reqErrorMessage, setReqErrorMessage] = useState("");
   const [isReqChecking, setIsReqChecking] = useState(false);
-  const [readyCalendarWaUrl, setReadyCalendarWaUrl] = useState<string | null>(
-    null,
-  );
+  const [readyCalendarWaUrl, setReadyCalendarWaUrl] = useState<string | null>(null);
 
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
   const [isLoadingTestimonials, setIsLoadingTestimonials] =
@@ -353,26 +351,12 @@ export default function Home() {
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
           if (data.status === "approved" || !data.status) {
-            let formattedDate = "Baru saja";
-            if (data.createdAt?.toDate) {
-              formattedDate = data.createdAt
-                .toDate()
-                .toLocaleDateString("id-ID", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                });
-            } else if (data.dateString) {
-              formattedDate = data.dateString;
-            }
-
             fetchedData.push({
               id: docSnap.id,
               name: data.name || "Anonim",
               content: data.content || "",
               rating: data.rating || 5,
               cardColor: data.cardColor || "rose",
-              createdAt: formattedDate,
               teacherReply: data.teacherReply || "",
               order: data.order || 0,
             } as TestimonialItem);
@@ -463,9 +447,7 @@ export default function Home() {
       const maxSessions = getMaxSessionsForDate(reqStart);
       if (maxSessions === 0) {
         const overrideNote =
-          dateOverridesMap[
-            `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-          ]?.note;
+          dateOverridesMap[`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`]?.note;
 
         setErrorMessage(
           overrideNote
@@ -549,7 +531,7 @@ export default function Home() {
       const formattedDate = reqStart.toLocaleDateString("id-ID", options);
       const modeKelas = activeTab === "online" ? "Online" : "Offline";
 
-      const text = `Halo Miss Ken! Aku sudah cek website Keluy English Club.\nAku tertarik untuk daftar kelas ${modeKelas} ${srv.name} untuk jadwal hari ${formattedDate}, jam ${inputTime} WIB.\nApakah slotnya masih tersedia, Miss?`;
+      const text = `Halo Miss Ken! 👋 Aku sudah cek website Keluy English Club.\nAku tertarik untuk daftar kelas ${modeKelas} ${srv.name} untuk jadwal hari ${formattedDate}, jam ${inputTime} WIB.\nApakah slotnya masih tersedia, Miss?`;
 
       const waUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`;
       setReadyWaUrl(waUrl);
@@ -565,9 +547,7 @@ export default function Home() {
   const handleCalendarRequestWhatsApp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDate || !reqServiceId || !reqTime) {
-      setReqErrorMessage(
-        "Silakan lengkapi tanggal, pilih kelas, dan jam terlebih dahulu.",
-      );
+      setReqErrorMessage("Silakan lengkapi tanggal, pilih kelas, dan jam terlebih dahulu.");
       return;
     }
     setReqErrorMessage("");
@@ -592,9 +572,7 @@ export default function Home() {
 
       const maxSessions = getMaxSessionsForDate(reqStart);
       if (maxSessions === 0) {
-        setReqErrorMessage(
-          "Hari tersebut adalah hari libur / tidak menerima kelas.",
-        );
+        setReqErrorMessage("Hari tersebut adalah hari libur / tidak menerima kelas.");
         setIsReqChecking(false);
         return;
       }
@@ -638,10 +616,7 @@ export default function Home() {
 
       const srv = allServices.find((s) => s.id === reqServiceId);
       let durationMins = 60;
-      if (
-        srv &&
-        (srv.duration.includes("90") || srv.duration.includes("1.5"))
-      ) {
+      if (srv && (srv.duration.includes("90") || srv.duration.includes("1.5"))) {
         durationMins = 90;
       }
 
@@ -678,9 +653,7 @@ export default function Home() {
       const waUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`;
       setReadyCalendarWaUrl(waUrl);
     } catch {
-      setReqErrorMessage(
-        "Terjadi kesalahan sistem, silakan coba beberapa saat lagi.",
-      );
+      setReqErrorMessage("Terjadi kesalahan sistem, silakan coba beberapa saat lagi.");
     } finally {
       setIsReqChecking(false);
     }
@@ -1191,8 +1164,7 @@ export default function Home() {
                         {readyWaUrl ? (
                           <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-center space-y-2.5">
                             <div className="flex items-center justify-center gap-1 text-emerald-700 font-bold text-xs">
-                              <CheckCircle2 className="w-4 h-4" /> Jadwal
-                              Tersedia!
+                              <CheckCircle2 className="w-4 h-4" /> Jadwal Tersedia!
                             </div>
                             <a
                               href={readyWaUrl}
@@ -1201,16 +1173,14 @@ export default function Home() {
                               className="w-full bg-[#25D366] text-white font-bold text-xs py-2.5 rounded-xl shadow-md hover:bg-[#1DA851] transition flex items-center justify-center gap-1.5"
                               onClick={() => setBookingCardId(null)}
                             >
-                              <MessageCircle className="w-4 h-4" /> Kirim Pesan
-                              ke WA
+                              <MessageCircle className="w-4 h-4" /> Kirim Pesan ke WA
                             </a>
                           </div>
                         ) : (
                           <>
                             <div className="mb-3">
                               <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                                <CalendarIcon className="w-3.5 h-3.5 text-rose-400" />{" "}
-                                Tanggal
+                                <CalendarIcon className="w-3.5 h-3.5 text-rose-400" /> Tanggal
                               </label>
                               <input
                                 type="date"
@@ -1226,8 +1196,7 @@ export default function Home() {
 
                             <div className="mb-4">
                               <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                                <Clock className="w-3.5 h-3.5 text-rose-400" />{" "}
-                                Jam
+                                <Clock className="w-3.5 h-3.5 text-rose-400" /> Jam
                               </label>
                               <input
                                 type="time"
@@ -1379,12 +1348,12 @@ export default function Home() {
                             isHoliday
                               ? "bg-slate-200 text-slate-400 cursor-not-allowed opacity-70"
                               : isSelected
-                                ? "bg-rose-500 text-white font-bold shadow-md scale-105"
-                                : isFull
-                                  ? "bg-red-50 text-red-400 border border-red-200 hover:bg-red-100"
-                                  : isToday
-                                    ? "border-2 border-rose-400 text-rose-600 bg-white"
-                                    : "hover:bg-rose-100 text-slate-700 bg-white/60"
+                              ? "bg-rose-500 text-white font-bold shadow-md scale-105"
+                              : isFull
+                              ? "bg-red-50 text-red-400 border border-red-200 hover:bg-red-100"
+                              : isToday
+                              ? "border-2 border-rose-400 text-rose-600 bg-white"
+                              : "hover:bg-rose-100 text-slate-700 bg-white/60"
                           }`}
                         >
                           <span>{dayNumber}</span>
@@ -1729,9 +1698,6 @@ export default function Home() {
                             >
                               {item.name}
                             </h3>
-                            <p className="text-[10px] font-medium text-slate-400 mt-0.5">
-                              {item.createdAt}
-                            </p>
                           </div>
                         </div>
 
@@ -1865,15 +1831,8 @@ export default function Home() {
                 <span className="text-[10px] font-bold text-rose-500 uppercase tracking-widest block">
                   Request Slot Kalender
                 </span>
-                <h3
-                  className={`${playfair.className} text-xl font-bold text-rose-950`}
-                >
-                  {selectedDate.toLocaleDateString("id-ID", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
+                <h3 className={`${playfair.className} text-xl font-bold text-rose-950`}>
+                  {selectedDate.toLocaleDateString("id-ID", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </h3>
               </div>
             </div>
@@ -1891,8 +1850,7 @@ export default function Home() {
                   <CheckCircle2 className="w-5 h-5" /> Slot Tersedia!
                 </div>
                 <p className="text-xs text-slate-600">
-                  Silakan klik tombol di bawah untuk melanjutkan pengiriman
-                  pesan request ke WhatsApp Miss Ken.
+                  Silakan klik tombol di bawah untuk melanjutkan pengiriman pesan request ke WhatsApp Miss Ken.
                 </p>
                 <a
                   href={readyCalendarWaUrl}
@@ -1905,17 +1863,13 @@ export default function Home() {
                 </a>
               </div>
             ) : (
-              <form
-                onSubmit={handleCalendarRequestWhatsApp}
-                className="space-y-4"
-              >
+              <form onSubmit={handleCalendarRequestWhatsApp} className="space-y-4">
                 {/* CUSTOM CARD SELECTOR */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                    <BookOpen className="w-4 h-4 text-rose-400" /> Pilih Program
-                    / Kelas
+                    <BookOpen className="w-4 h-4 text-rose-400" /> Pilih Program / Kelas
                   </label>
-
+                  
                   <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
                     {allServices.map((srv) => {
                       const isSelected = reqServiceId === srv.id;
@@ -1933,34 +1887,20 @@ export default function Home() {
                         >
                           <div className="flex-1 pr-2">
                             <div className="flex items-center gap-2 mb-1">
-                              <span
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${
-                                  isOffline
-                                    ? "bg-amber-100 text-amber-700"
-                                    : "bg-sky-100 text-sky-700"
-                                }`}
-                              >
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                                isOffline ? "bg-amber-100 text-amber-700" : "bg-sky-100 text-sky-700"
+                              }`}>
                                 {srv.category}
                               </span>
-                              <span className="text-xs font-bold text-rose-600">
-                                {srv.price}
-                              </span>
+                              <span className="text-xs font-bold text-rose-600">{srv.price}</span>
                             </div>
-                            <h4 className="font-bold text-slate-800 text-xs sm:text-sm leading-tight">
-                              {srv.name}
-                            </h4>
+                            <h4 className="font-bold text-slate-800 text-xs sm:text-sm leading-tight">{srv.name}</h4>
                           </div>
 
-                          <div
-                            className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
-                              isSelected
-                                ? "bg-rose-500 border-rose-500 text-white"
-                                : "border-slate-300 bg-white"
-                            }`}
-                          >
-                            {isSelected && (
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                            )}
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected ? "bg-rose-500 border-rose-500 text-white" : "border-slate-300 bg-white"
+                          }`}>
+                            {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
                           </div>
                         </div>
                       );
