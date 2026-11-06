@@ -1057,7 +1057,8 @@ export default function Home() {
             )}
 
             {activeTab === "offline" && (
-              <div className="mt-6 max-w-2xl space-y-4 text-left transition-all duration-300">
+              <div className="mt-6 max-w-2xl space-y-3 text-left transition-all duration-300 w-full mx-auto">
+                {/* Kotak 1: Status Penutupan Pendaftaran */}
                 <div className="bg-amber-50 border border-amber-200 text-amber-900 text-xs md:text-sm leading-relaxed px-6 py-4 rounded-2xl shadow-sm flex items-start gap-3">
                   <div className="p-2 bg-amber-100 text-amber-600 rounded-xl shrink-0 mt-0.5">
                     <AlertTriangle className="w-4 h-4" />
@@ -1066,11 +1067,23 @@ export default function Home() {
                     <strong className="block font-bold text-amber-950 mb-1">
                       Pengumuman Penting:
                     </strong>
-                    <p className="mb-2">
+                    <p>
                       Pendaftaran murid baru untuk seluruh program OFFLINE saat
                       ini <strong>DITUTUP SEMENTARA</strong> dan baru akan dibuka
                       kembali pada Januari 2027.
                     </p>
+                  </div>
+                </div>
+
+                {/* Kotak 2: Catatan Harga & Transport */}
+                <div className="bg-rose-50 border border-rose-200 text-rose-900 text-xs md:text-sm leading-relaxed px-6 py-4 rounded-2xl shadow-sm flex items-start gap-3">
+                  <div className="p-2 bg-rose-100 text-rose-600 rounded-xl shrink-0 mt-0.5">
+                    <Info className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <strong className="block font-bold text-rose-950 mb-1">
+                      Ketentuan Harga & Transport:
+                    </strong>
                     <p>
                       Harga OFFLINE bisa berubah sewaktu-waktu tergantung kebutuhan dan belum termasuk biaya transport.
                     </p>
