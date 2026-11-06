@@ -1066,9 +1066,14 @@ export default function Home() {
                     <strong className="block font-bold text-amber-950 mb-1">
                       Pengumuman Penting:
                     </strong>
-                    Pendaftaran murid baru untuk seluruh program OFFLINE saat
-                    ini <strong>DITUTUP SEMENTARA</strong> dan baru akan dibuka
-                    kembali pada Januari 2027.
+                    <p className="mb-2">
+                      Pendaftaran murid baru untuk seluruh program OFFLINE saat
+                      ini <strong>DITUTUP SEMENTARA</strong> dan baru akan dibuka
+                      kembali pada Januari 2027.
+                    </p>
+                    <p>
+                      Harga OFFLINE bisa berubah sewaktu-waktu tergantung kebutuhan dan belum termasuk biaya transport.
+                    </p>
                   </div>
                 </div>
               </div>
