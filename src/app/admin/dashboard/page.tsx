@@ -460,10 +460,12 @@ export default function AdminDashboardPage() {
         updatedAt: serverTimestamp(),
       });
       setOverrideNote("");
-      fetchDateOverrides();
+      await fetchDateOverrides();
     } catch (err) {
       console.error("Gagal menyimpan tanggal:", err);
-      alert("Gagal memperbarui status tanggal.");
+      alert(
+        "Gagal memperbarui status tanggal. Periksa koneksi atau izin database.",
+      );
     } finally {
       setIsSavingOverride(false);
     }
@@ -473,7 +475,7 @@ export default function AdminDashboardPage() {
     if (confirm(`Kembalikan tanggal ${dateId} ke aturan standar?`)) {
       try {
         await deleteDoc(doc(db, "date_overrides", dateId));
-        fetchDateOverrides();
+        await fetchDateOverrides();
       } catch (err) {
         console.error("Gagal menghapus aturan jadwal:", err);
       }
@@ -1514,7 +1516,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 3: TESTIMONIAL (Uniform rounded-3xl cards & grid layout) */}
+        {/* TAB 3: TESTIMONIAL */}
         {activeTab === "testimonials" && (
           <div className="space-y-6 animate-in fade-in duration-200">
             <div>
@@ -1698,7 +1700,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 4: KELOLA PROGRAM (Uniform rounded-3xl cards & grid layout) */}
+        {/* TAB 4: KELOLA PROGRAM */}
         {activeTab === "services" && (
           <div className="space-y-6 animate-in fade-in duration-200">
             <div className="flex justify-between items-center">
@@ -1811,7 +1813,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 5: KELOLA S&K (TERMS) */}
+        {/* TAB 5: KELOLA S&K */}
         {activeTab === "terms" && (
           <div className="space-y-6 animate-in fade-in duration-200">
             <div className="flex justify-between items-center">
