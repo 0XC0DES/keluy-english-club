@@ -112,7 +112,6 @@ interface DateOverrideItem {
   note?: string;
 }
 
-// Kamus pemetaan warna kartu testimonial
 const COLOR_OPTIONS: Record<string, { bg: string; border: string }> = {
   rose: { bg: "bg-rose-50", border: "border-rose-200" },
   peach: { bg: "bg-orange-50", border: "border-orange-200" },
@@ -122,7 +121,6 @@ const COLOR_OPTIONS: Record<string, { bg: string; border: string }> = {
   amber: { bg: "bg-amber-50", border: "border-amber-200" },
 };
 
-// Helper untuk Render Teks + Gambar/Sticker/GIF
 const renderContentWithMedia = (text: string) => {
   const mediaRegex = /!\[media\]\((.*?)\)/g;
   const parts = text.split(mediaRegex);
@@ -181,14 +179,15 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState("");
   const [readyWaUrl, setReadyWaUrl] = useState<string | null>(null);
 
-  // State untuk Modal Request Slot Kalender
   const [allServices, setAllServices] = useState<ServiceItem[]>([]);
   const [isRequestSlotModalOpen, setIsRequestSlotModalOpen] = useState(false);
   const [reqServiceId, setReqServiceId] = useState("");
   const [reqTime, setReqTime] = useState("");
   const [reqErrorMessage, setReqErrorMessage] = useState("");
   const [isReqChecking, setIsReqChecking] = useState(false);
-  const [readyCalendarWaUrl, setReadyCalendarWaUrl] = useState<string | null>(null);
+  const [readyCalendarWaUrl, setReadyCalendarWaUrl] = useState<string | null>(
+    null,
+  );
 
   const [testimonials, setTestimonials] = useState<TestimonialItem[]>([]);
   const [isLoadingTestimonials, setIsLoadingTestimonials] =
@@ -248,20 +247,20 @@ export default function Home() {
 
     const day = date.getDay();
     switch (day) {
-      case 1:
-        return 4;
-      case 2:
+      case 1: // Senin
+        return 5;
+      case 2: // Selasa
+        return 5;
+      case 3: // Rabu
         return 3;
-      case 3:
-        return 5;
-      case 4:
+      case 4: // Kamis
         return 4;
-      case 5:
-        return 5;
-      case 6:
-        return 0;
-      case 0:
+      case 5: // Jumat
         return 4;
+      case 6: // Sabtu
+        return 3;
+      case 0: // Minggu
+        return 3;
       default:
         return 4;
     }
@@ -444,10 +443,32 @@ export default function Home() {
         return;
       }
 
+      // Validasi jam operasional berdasarkan kategori (Online vs Offline)
+      const isOffline = srv.category === "offline";
+      if (isOffline) {
+        if (hours < 11 || hours > 16) {
+          setErrorMessage(
+            "Jam operasional kelas offline adalah pukul 11.00 hingga 16.00 WIB.",
+          );
+          setIsChecking(false);
+          return;
+        }
+      } else {
+        if (hours < 9 || hours >= 21) {
+          setErrorMessage(
+            "Jam operasional kelas online adalah pukul 09.00 hingga 21.00 WIB.",
+          );
+          setIsChecking(false);
+          return;
+        }
+      }
+
       const maxSessions = getMaxSessionsForDate(reqStart);
       if (maxSessions === 0) {
         const overrideNote =
-          dateOverridesMap[`${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`]?.note;
+          dateOverridesMap[
+            `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+          ]?.note;
 
         setErrorMessage(
           overrideNote
@@ -547,7 +568,9 @@ export default function Home() {
   const handleCalendarRequestWhatsApp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDate || !reqServiceId || !reqTime) {
-      setReqErrorMessage("Silakan lengkapi tanggal, pilih kelas, dan jam terlebih dahulu.");
+      setReqErrorMessage(
+        "Silakan lengkapi tanggal, pilih kelas, dan jam terlebih dahulu.",
+      );
       return;
     }
     setReqErrorMessage("");
@@ -570,9 +593,33 @@ export default function Home() {
         return;
       }
 
+      const srv = allServices.find((s) => s.id === reqServiceId);
+      const isOffline = srv?.category === "offline";
+
+      // Validasi jam operasional berdasarkan kategori (Online vs Offline)
+      if (isOffline) {
+        if (hours < 11 || hours > 16) {
+          setReqErrorMessage(
+            "Jam operasional kelas offline adalah pukul 11.00 hingga 16.00 WIB.",
+          );
+          setIsReqChecking(false);
+          return;
+        }
+      } else {
+        if (hours < 9 || hours >= 21) {
+          setReqErrorMessage(
+            "Jam operasional kelas online adalah pukul 09.00 hingga 21.00 WIB.",
+          );
+          setIsReqChecking(false);
+          return;
+        }
+      }
+
       const maxSessions = getMaxSessionsForDate(reqStart);
       if (maxSessions === 0) {
-        setReqErrorMessage("Hari tersebut adalah hari libur / tidak menerima kelas.");
+        setReqErrorMessage(
+          "Hari tersebut adalah hari libur / tidak menerima kelas.",
+        );
         setIsReqChecking(false);
         return;
       }
@@ -614,9 +661,11 @@ export default function Home() {
         return;
       }
 
-      const srv = allServices.find((s) => s.id === reqServiceId);
       let durationMins = 60;
-      if (srv && (srv.duration.includes("90") || srv.duration.includes("1.5"))) {
+      if (
+        srv &&
+        (srv.duration.includes("90") || srv.duration.includes("1.5"))
+      ) {
         durationMins = 90;
       }
 
@@ -653,7 +702,9 @@ export default function Home() {
       const waUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(text)}`;
       setReadyCalendarWaUrl(waUrl);
     } catch {
-      setReqErrorMessage("Terjadi kesalahan sistem, silakan coba beberapa saat lagi.");
+      setReqErrorMessage(
+        "Terjadi kesalahan sistem, silakan coba beberapa saat lagi.",
+      );
     } finally {
       setIsReqChecking(false);
     }
@@ -1058,24 +1109,6 @@ export default function Home() {
 
             {activeTab === "offline" && (
               <div className="mt-6 max-w-2xl space-y-3 text-left transition-all duration-300 w-full mx-auto">
-                {/* Kotak 1: Status Penutupan Pendaftaran */}
-                <div className="bg-amber-50 border border-amber-200 text-amber-900 text-xs md:text-sm leading-relaxed px-6 py-4 rounded-2xl shadow-sm flex items-start gap-3">
-                  <div className="p-2 bg-amber-100 text-amber-600 rounded-xl shrink-0 mt-0.5">
-                    <AlertTriangle className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <strong className="block font-bold text-amber-950 mb-1">
-                      Pengumuman Penting:
-                    </strong>
-                    <p>
-                      Pendaftaran murid baru untuk seluruh program OFFLINE saat
-                      ini <strong>DITUTUP SEMENTARA</strong> dan baru akan dibuka
-                      kembali pada Januari 2027.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Kotak 2: Catatan Harga & Transport */}
                 <div className="bg-rose-50 border border-rose-200 text-rose-900 text-xs md:text-sm leading-relaxed px-6 py-4 rounded-2xl shadow-sm flex items-start gap-3">
                   <div className="p-2 bg-rose-100 text-rose-600 rounded-xl shrink-0 mt-0.5">
                     <Info className="w-4 h-4" />
@@ -1085,7 +1118,8 @@ export default function Home() {
                       Ketentuan Harga & Transport:
                     </strong>
                     <p>
-                      Harga OFFLINE bisa berubah sewaktu-waktu tergantung kebutuhan dan belum termasuk biaya transport.
+                      Harga OFFLINE bisa berubah sewaktu-waktu tergantung
+                      kebutuhan dan belum termasuk biaya transport.
                     </p>
                   </div>
                 </div>
@@ -1182,7 +1216,8 @@ export default function Home() {
                         {readyWaUrl ? (
                           <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-center space-y-2.5">
                             <div className="flex items-center justify-center gap-1 text-emerald-700 font-bold text-xs">
-                              <CheckCircle2 className="w-4 h-4" /> Jadwal Tersedia!
+                              <CheckCircle2 className="w-4 h-4" /> Jadwal
+                              Tersedia!
                             </div>
                             <a
                               href={readyWaUrl}
@@ -1191,14 +1226,16 @@ export default function Home() {
                               className="w-full bg-[#25D366] text-white font-bold text-xs py-2.5 rounded-xl shadow-md hover:bg-[#1DA851] transition flex items-center justify-center gap-1.5"
                               onClick={() => setBookingCardId(null)}
                             >
-                              <MessageCircle className="w-4 h-4" /> Kirim Pesan ke WA
+                              <MessageCircle className="w-4 h-4" /> Kirim Pesan
+                              ke WA
                             </a>
                           </div>
                         ) : (
                           <>
                             <div className="mb-3">
                               <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                                <CalendarIcon className="w-3.5 h-3.5 text-rose-400" /> Tanggal
+                                <CalendarIcon className="w-3.5 h-3.5 text-rose-400" />{" "}
+                                Tanggal
                               </label>
                               <input
                                 type="date"
@@ -1214,7 +1251,8 @@ export default function Home() {
 
                             <div className="mb-4">
                               <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-                                <Clock className="w-3.5 h-3.5 text-rose-400" /> Jam
+                                <Clock className="w-3.5 h-3.5 text-rose-400" />{" "}
+                                Jam
                               </label>
                               <input
                                 type="time"
@@ -1366,12 +1404,12 @@ export default function Home() {
                             isHoliday
                               ? "bg-slate-200 text-slate-400 cursor-not-allowed opacity-70"
                               : isSelected
-                              ? "bg-rose-500 text-white font-bold shadow-md scale-105"
-                              : isFull
-                              ? "bg-red-50 text-red-400 border border-red-200 hover:bg-red-100"
-                              : isToday
-                              ? "border-2 border-rose-400 text-rose-600 bg-white"
-                              : "hover:bg-rose-100 text-slate-700 bg-white/60"
+                                ? "bg-rose-500 text-white font-bold shadow-md scale-105"
+                                : isFull
+                                  ? "bg-red-50 text-red-400 border border-red-200 hover:bg-red-100"
+                                  : isToday
+                                    ? "border-2 border-rose-400 text-rose-600 bg-white"
+                                    : "hover:bg-rose-100 text-slate-700 bg-white/60"
                           }`}
                         >
                           <span>{dayNumber}</span>
@@ -1849,8 +1887,15 @@ export default function Home() {
                 <span className="text-[10px] font-bold text-rose-500 uppercase tracking-widest block">
                   Request Slot Kalender
                 </span>
-                <h3 className={`${playfair.className} text-xl font-bold text-rose-950`}>
-                  {selectedDate.toLocaleDateString("id-ID", { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                <h3
+                  className={`${playfair.className} text-xl font-bold text-rose-950`}
+                >
+                  {selectedDate.toLocaleDateString("id-ID", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
                 </h3>
               </div>
             </div>
@@ -1868,7 +1913,8 @@ export default function Home() {
                   <CheckCircle2 className="w-5 h-5" /> Slot Tersedia!
                 </div>
                 <p className="text-xs text-slate-600">
-                  Silakan klik tombol di bawah untuk melanjutkan pengiriman pesan request ke WhatsApp Miss Ken.
+                  Silakan klik tombol di bawah untuk melanjutkan pengiriman
+                  pesan request ke WhatsApp Miss Ken.
                 </p>
                 <a
                   href={readyCalendarWaUrl}
@@ -1881,13 +1927,17 @@ export default function Home() {
                 </a>
               </div>
             ) : (
-              <form onSubmit={handleCalendarRequestWhatsApp} className="space-y-4">
+              <form
+                onSubmit={handleCalendarRequestWhatsApp}
+                className="space-y-4"
+              >
                 {/* CUSTOM CARD SELECTOR */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                    <BookOpen className="w-4 h-4 text-rose-400" /> Pilih Program / Kelas
+                    <BookOpen className="w-4 h-4 text-rose-400" /> Pilih Program
+                    / Kelas
                   </label>
-                  
+
                   <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
                     {allServices.map((srv) => {
                       const isSelected = reqServiceId === srv.id;
@@ -1905,20 +1955,34 @@ export default function Home() {
                         >
                           <div className="flex-1 pr-2">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${
-                                isOffline ? "bg-amber-100 text-amber-700" : "bg-sky-100 text-sky-700"
-                              }`}>
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                                  isOffline
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-sky-100 text-sky-700"
+                                }`}
+                              >
                                 {srv.category}
                               </span>
-                              <span className="text-xs font-bold text-rose-600">{srv.price}</span>
+                              <span className="text-xs font-bold text-rose-600">
+                                {srv.price}
+                              </span>
                             </div>
-                            <h4 className="font-bold text-slate-800 text-xs sm:text-sm leading-tight">{srv.name}</h4>
+                            <h4 className="font-bold text-slate-800 text-xs sm:text-sm leading-tight">
+                              {srv.name}
+                            </h4>
                           </div>
 
-                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
-                            isSelected ? "bg-rose-500 border-rose-500 text-white" : "border-slate-300 bg-white"
-                          }`}>
-                            {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                          <div
+                            className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                              isSelected
+                                ? "bg-rose-500 border-rose-500 text-white"
+                                : "border-slate-300 bg-white"
+                            }`}
+                          >
+                            {isSelected && (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            )}
                           </div>
                         </div>
                       );
