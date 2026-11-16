@@ -242,7 +242,8 @@ export default function Home() {
     const override = dateOverridesMap[dateStr];
     if (override !== undefined) {
       if (override.isHoliday) return 0;
-      return 4;
+      // Jika override ada tapi bukan hari libur, jangan hardcode return 4,
+      // melainkan lanjutkan ke switch-case di bawah sesuai hari.
     }
 
     const day = date.getDay();
@@ -250,13 +251,13 @@ export default function Home() {
       case 1: // Senin
         return 5;
       case 2: // Selasa
-        return 5;
+        return 4;
       case 3: // Rabu
-        return 3;
+        return 5;
       case 4: // Kamis
-        return 4;
+        return 3;
       case 5: // Jumat
-        return 4;
+        return 5;
       case 6: // Sabtu
         return 3;
       case 0: // Minggu
